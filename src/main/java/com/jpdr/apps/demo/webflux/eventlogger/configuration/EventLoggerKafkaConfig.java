@@ -5,7 +5,6 @@ import com.jpdr.apps.demo.webflux.eventlogger.component.EventLoggerMessage;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -19,8 +18,6 @@ import java.util.Map;
 @Configuration
 public class EventLoggerKafkaConfig {
   
-  @Value("${app.event-logger.kafka.enabled}")
-  private Boolean enabled;
   @Value("${app.event-logger.kafka.boostrap-server}")
   private String boostrapServer;
   @Value("${app.event-logger.kafka.compression-type}")
@@ -39,7 +36,6 @@ public class EventLoggerKafkaConfig {
   private String podName;
   
   @Bean(name = "eventLoggerKafkaProducerFactory")
-  @ConditionalOnProperty("app.event-logger.kafka.enabled")
   public ProducerFactory<String, EventLoggerMessage> producerFactory(){
     Map<String, Object> options = new HashMap<>();
     options.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
@@ -54,14 +50,12 @@ public class EventLoggerKafkaConfig {
   }
   
   @Bean(name = "eventLoggerKafkaTemplate")
-  @ConditionalOnProperty("app.event-logger.kafka.enabled")
   public KafkaTemplate<String, EventLoggerMessage> kafkaTemplate(
     @Qualifier("eventLoggerKafkaProducerFactory") ProducerFactory<String, EventLoggerMessage> producerFactory){
     return new KafkaTemplate<>(producerFactory);
   }
   
   @Bean
-  @ConditionalOnProperty("app.event-logger.kafka.enabled")
   public EventLogger eventLogger(
     @Qualifier("eventLoggerKafkaTemplate") KafkaTemplate<String, EventLoggerMessage> kafkaTemplate){
       return new EventLogger(kafkaTemplate, this.topic, this.podName);
