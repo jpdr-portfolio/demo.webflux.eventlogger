@@ -1,0 +1,72 @@
+plugins {
+	id 'java'
+	id 'maven-publish'
+	id 'org.springframework.boot' version '3.3.6'
+	id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'com.jpdr.apps'
+version = '1.0.0'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven {
+		url = uri("http://localhost:8060/repository/maven-releases/")
+		allowInsecureProtocol = true
+	}
+	maven {
+		url = uri("http://localhost:8060/repository/maven-snapshots/")
+		allowInsecureProtocol = true
+	}
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-webflux:3.4.0'
+	implementation 'org.springframework.kafka:spring-kafka:3.3.0'
+	compileOnly 'org.projectlombok:lombok:1.18.36'
+	annotationProcessor 'org.projectlombok:lombok:1.18.36'
+}
+
+bootJar {
+	exclude 'com/jpdr/apps/demo/webflux/eventlogger/Application.class'
+}
+
+jar {
+	exclude 'com/jpdr/apps/demo/webflux/eventlogger/Application.class'
+}
+
+
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			from components.java // Publish Java components (like JARs)
+		}
+	}
+	repositories {
+		maven {
+			name = "nexusReleases"
+			url = uri("http://localhost:8060/repository/maven-releases/") // Nexus repository URL
+			credentials {
+				username = System.getenv("NEXUS_USERNAME") ?: "defaultUsername"
+				password = System.getenv("NEXUS_PASSWORD") ?: "defaultPassword"
+				allowInsecureProtocol = true
+				if (version.endsWith("SNAPSHOT")) {
+					name = "nexusSnapshots"
+					url = uri("http://localhost:8060/repository/maven-snapshots/")
+				}
+			}
+		}
+	}
+}
