@@ -1,1 +1,3 @@
+com.jpdr.apps.demo.webflux.eventlogger.configuration.EventLoggerProperties
+com.jpdr.apps.demo.webflux.eventlogger.component.DataConverter
 com.jpdr.apps.demo.webflux.eventlogger.configuration.EventLoggerKafkaConfig

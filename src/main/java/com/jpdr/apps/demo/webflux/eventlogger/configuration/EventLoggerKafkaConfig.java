@@ -1,7 +1,9 @@
 package com.jpdr.apps.demo.webflux.eventlogger.configuration;
 
+import com.jpdr.apps.demo.webflux.eventlogger.component.DataConverter;
 import com.jpdr.apps.demo.webflux.eventlogger.component.EventLogger;
 import com.jpdr.apps.demo.webflux.eventlogger.component.EventLoggerMessage;
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,36 +18,34 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
+@RequiredArgsConstructor
 public class EventLoggerKafkaConfig {
   
-  @Value("${app.event-logger.kafka.boostrap-server}")
-  private String boostrapServer;
-  @Value("${app.event-logger.kafka.compression-type}")
-  private String compressionType;
-  @Value("${app.event-logger.kafka.request-timeout-ms}")
-  private Integer requestTimeoutMs;
-  @Value("${app.event-logger.kafka.delivery-timeout-ms}")
-  private Integer deliveryTimeoutMs;
-  @Value("${app.event-logger.kafka.retries}")
-  private Integer retries;
-  @Value("${app.event-logger.kafka.add-type-info-headers}")
-  private Boolean addTypeInfoHeaders;
-  @Value("${app.event-logger.kafka.topic}")
-  private String topic;
+  private final EventLoggerProperties properties;
+  private final DataConverter dataConverter;
+
   @Value("${app.pod-name}")
   private String podName;
   
   @Bean(name = "eventLoggerKafkaProducerFactory")
   public ProducerFactory<String, EventLoggerMessage> producerFactory(){
     Map<String, Object> options = new HashMap<>();
-    options.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
-    options.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.springframework.kafka.support.serializer.JsonSerializer");
-    options.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.boostrapServer);
-    options.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, this.requestTimeoutMs);
-    options.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, this.deliveryTimeoutMs);
-    options.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, this.compressionType);
-    options.put(ProducerConfig.RETRIES_CONFIG, this.retries);
-    options.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, this.addTypeInfoHeaders);
+    options.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+      "org.apache.kafka.common.serialization.StringSerializer");
+    options.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+      "org.springframework.kafka.support.serializer.JsonSerializer");
+    options.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
+      this.properties.getKafka().getBoostrapServer());
+    options.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG,
+      this.properties.getKafka().getRequestTimeoutMs());
+    options.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG,
+      this.properties.getKafka().getDeliveryTimeoutMs());
+    options.put(ProducerConfig.COMPRESSION_TYPE_CONFIG,
+      this.properties.getKafka().getCompressionType());
+    options.put(ProducerConfig.RETRIES_CONFIG,
+      this.properties.getKafka().getRetries());
+    options.put(JsonSerializer.ADD_TYPE_INFO_HEADERS,
+      this.properties.getKafka().getAddTypeInfoHeaders());
     return new DefaultKafkaProducerFactory<>(options);
   }
   
@@ -58,7 +58,8 @@ public class EventLoggerKafkaConfig {
   @Bean
   public EventLogger eventLogger(
     @Qualifier("eventLoggerKafkaTemplate") KafkaTemplate<String, EventLoggerMessage> kafkaTemplate){
-      return new EventLogger(kafkaTemplate, this.topic, this.podName);
+      return new EventLogger(kafkaTemplate, this.properties.getKafka().getTopic(),
+        this.podName, this.dataConverter);
   }
 
 }
