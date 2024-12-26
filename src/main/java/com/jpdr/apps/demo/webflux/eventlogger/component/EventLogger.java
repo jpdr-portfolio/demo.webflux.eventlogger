@@ -20,7 +20,7 @@ public class EventLogger {
   
   public void logEvent(String method, Object data){
     Mono.defer(() -> Mono.justOrEmpty(data))
-      .map(dataConverter::toObjectNode)
+      .map(dataConverter::toJsonNode)
       .map(jsonObject ->
         EventLoggerMessage.builder()
           .podName(this.podName)
